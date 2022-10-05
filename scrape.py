@@ -4,7 +4,7 @@ import downloader
 from utils import make_directory, directory_exists, contains_illegal_characters
 
 # change this obviously
-subreddit = "cats"
+subreddit = "elfhentai"
 
 # set to 0 if points/upvote count is not important
 minimum_points = 0
@@ -28,8 +28,10 @@ total_posts = 0
 total_accepted = 0
 total_rejected = 0
 
+
 def expose_subreddit():
     return subreddit
+
 
 def post_qualifies(post):
     # updoots
@@ -108,6 +110,6 @@ if __name__ == '__main__':
         exit(1)
 #    if directory_exists(subreddit):
 #        print("This directory already exists!")
- #       exit(1)
+#        exit(1)
     make_directory(subreddit)
     main()

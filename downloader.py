@@ -33,6 +33,8 @@ def save(url):
     with open(name, "wb") as f:
         f.write(response.content)
 
+    scrape.total_accepted += 1
+
 
 def save_as(url, name):
     headers = {"User-Agent": ua.random}
@@ -45,6 +47,8 @@ def save_as(url, name):
 
     with open(path, "wb") as f:
         f.write(response.content)
+
+    scrape.total_accepted += 1
 
 
 def download_redgifs(url):
@@ -63,17 +67,26 @@ def download_reddit_gallery(url):
     new_url += ".json"
     headers = {"User-Agent": ua.random}
     response = requests.get(new_url, headers=headers)
-    json_resp = response.json()
+    data = response.json()
     print(url)
-    print(json_resp)
-    if json_resp[0]['data']['children'][0]['data']['selftext'] == "[removed]" or json_resp[1]['media'] is None:
+    post_is_removed = data[0]['data']['children'][0]['data']['selftext'] == "[removed]"
+    media_exists = 'media_metadata' in data[0]['data']['children'][0]['data']
+
+    if post_is_removed or not media_exists:
         print("gallery removed, skipping.")
+        scrape.total_rejected += 1
         return
-    j = json_resp[0]['data']['children'][0]['data']['media_metadata']
+
+    media = data[0]['data']['children'][0]['data']['media_metadata']
+    if media is None:
+        print("gallery removed, skipping.")
+        scrape.total_rejected += 1
+        return
+
     gallery_index = 1
     basename = ""
-    for c in j:
-        image_url = j[c]['o'][0]['u']
+    for c in media:
+        image_url = media[c]['o'][0]['u']
         image_url = image_url.replace("preview.", "i.")
         image_url_clean = clean_url(image_url)
         if gallery_index == 1:
@@ -95,8 +108,11 @@ def download(url):
 
     if "redgifs.com" in url:
         download_redgifs(url)
+
+        return
     elif "reddit.com/gallery/" in url:
         download_reddit_gallery(url)
+        return
     else:
         for ext in file_ext:
             if ext in url:
