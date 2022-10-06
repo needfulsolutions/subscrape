@@ -4,7 +4,7 @@ import downloader
 from utils import make_directory, directory_exists, contains_illegal_characters
 
 # change this obviously
-subreddit = "overwatch_porn"
+subreddit = "israel"
 
 # set to 0 if points/upvote count is not important
 minimum_points = 0
@@ -25,8 +25,6 @@ last_post = "null"
 ua = UserAgent()
 
 total_posts = 0
-total_accepted = 0
-total_rejected = 0
 
 
 def expose_subreddit():
@@ -56,12 +54,9 @@ def fetch_json(url):
 
 
 def grab_media_urls(posts):
-    global total_rejected
-
     urls = []
     for p in posts:
         if not post_qualifies(p['data']):
-            total_rejected += 1
             print(f"[[Post id={p['data']['id']}]] title=[{p['data']['title']}] rejected.")
             continue
         urls.append(p['data']['url'])
@@ -89,7 +84,7 @@ def scrape_subreddit_page(page):
 
 
 def main():
-    global total_posts, total_rejected, total_accepted
+    global total_posts
 
     page_number = 1
     batch_size = 100
@@ -101,7 +96,7 @@ def main():
         total_posts += batch_size
         page_number += 1
 
-    print(f"Total: {total_posts} of which {total_accepted} downloaded, and {total_rejected} were rejected.")
+    print(f"Total: {total_posts}")
 
 
 if __name__ == '__main__':

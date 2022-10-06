@@ -45,8 +45,6 @@ def save(url):
     with open(name, "wb") as f:
         f.write(response.content)
 
-    scrape.total_accepted += 1
-
 
 def save_as(url, name):
     headers = {"User-Agent": ua.random}
@@ -59,8 +57,6 @@ def save_as(url, name):
 
     with open(path, "wb") as f:
         f.write(response.content)
-
-    scrape.total_accepted += 1
 
 
 def redgifs_save_as(url, name, session):

@@ -8,3 +8,4 @@ This tool currently supports the following:
 * most forms of reddit galleries
 * redgif.com 
 
+Due to reddit limitations, only 1000 posts can be reached per listing/timeframe.
