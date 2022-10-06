@@ -65,11 +65,18 @@ def save_as(url, name):
 
 def redgifs_save_as(url, name, session):
     path = f"{scrape.expose_subreddit()}/{name}"
+    cleaned_url = clean_url(url)
+
+    if utils.file_exists(path):
+        print(f"redgif {name} already exists, skipping.")
+        return
 
     with session.get(url, stream=True) as r:
         with open(path, 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
+
+    print(f"redgifs saved: {name} from {cleaned_url}")
 
 
 def download_redgifs(url):
@@ -77,7 +84,6 @@ def download_redgifs(url):
     request_url = f"https://api.redgifs.com/v2/gifs/{rid}"
     rg_session = requests.Session()
     response = rg_session.get(request_url)
-    saved_as_hd = False
     if response.status_code != 200:
         print(f"gif not found: {url}")
         return
@@ -95,11 +101,14 @@ def download_redgifs(url):
         cleaned_url = clean_url(data['gif']['urls']['hd'])
         clean_filename = redgifs_url_to_filename(cleaned_url)
         redgifs_save_as(data['gif']['urls']['hd'], clean_filename, rg_session)
-        saved_as_hd = True
-
-    print(f"redgif saved ({'hd' if saved_as_hd else 'sd'}): {url}")
 
 
+
+# gfycat nsfw moved to redgifs
+def download_nsfw_gfycat(url):
+    redgif_url = url.replace("gfycat.com", "redgifs.com/watch")
+    print(f"Downloading gfycat url as redgifs {url} --> {redgif_url}")
+    download_redgifs(redgif_url)
 # assumes that basename only has 3 dots
 # https://i   .   redd   .   it/blababla    .    jpg
 def add_gallery_index(basename, index):
@@ -107,12 +116,14 @@ def add_gallery_index(basename, index):
     parts[2] += "_" + str(index)
     return '.'.join(parts)
 
+
 def json_keypair_exists(key, json):
     if not key in json:
         return False
     if json[key] is None:
         return False
     return True
+
 
 def download_reddit_gallery(url):
     new_url = url.replace("/gallery/", "/comments/")
@@ -167,7 +178,9 @@ def download(url):
 
     if "redgifs.com" in url:
         download_redgifs(url)
-
+        return
+    elif "gfycat.com" in url:
+        download_nsfw_gfycat(url)
         return
     elif "reddit.com/gallery/" in url:
         download_reddit_gallery(url)
