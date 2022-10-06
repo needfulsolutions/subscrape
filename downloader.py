@@ -7,6 +7,18 @@ import utils
 ua = UserAgent()
 filename_pattern = r"\/([^\/]+\.[a-zA-Z0-9]+)$"
 clean_url_pattern = r"(https?[^\?]+)"
+redgifs_pattern = r"watch\/([a-zA-Z0-9]+)"
+redgifs_url_to_filename_pattern = r"\/([a-zA-Z0-9\.]+)$"
+
+
+def redgifs_url_to_filename(url):
+    results = re.findall(redgifs_url_to_filename_pattern, url)
+    return results[0]
+
+
+def find_redgifs_id(url):
+    results = re.findall(redgifs_pattern, url)
+    return results[0]
 
 
 def clean_url(url):
@@ -51,8 +63,42 @@ def save_as(url, name):
     scrape.total_accepted += 1
 
 
+def redgifs_save_as(url, name, session):
+    path = f"{scrape.expose_subreddit()}/{name}"
+
+    with session.get(url, stream=True) as r:
+        with open(path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+
 def download_redgifs(url):
-    pass
+    rid = find_redgifs_id(url)
+    request_url = f"https://api.redgifs.com/v2/gifs/{rid}"
+    rg_session = requests.Session()
+    response = rg_session.get(request_url)
+    saved_as_hd = False
+    if response.status_code != 200:
+        print(f"gif not found: {url}")
+        return
+
+    data = response.json()
+    if not json_keypair_exists('hd', data['gif']['urls']):
+        if not json_keypair_exists('sd', data['gif']['urls']):
+            print(f"no gif found in json response: {url}")
+            print(data)
+            return
+        cleaned_url = clean_url(data['gif']['urls']['sd'])
+        clean_filename = redgifs_url_to_filename(cleaned_url)
+        redgifs_save_as(data['gif']['urls']['sd'], clean_filename, rg_session)
+    else:
+        cleaned_url = clean_url(data['gif']['urls']['hd'])
+        clean_filename = redgifs_url_to_filename(cleaned_url)
+        redgifs_save_as(data['gif']['urls']['hd'], clean_filename, rg_session)
+        saved_as_hd = True
+
+    print(f"redgif saved ({'hd' if saved_as_hd else 'sd'}): {url}")
+
 
 # assumes that basename only has 3 dots
 # https://i   .   redd   .   it/blababla    .    jpg
@@ -61,6 +107,12 @@ def add_gallery_index(basename, index):
     parts[2] += "_" + str(index)
     return '.'.join(parts)
 
+def json_keypair_exists(key, json):
+    if not key in json:
+        return False
+    if json[key] is None:
+        return False
+    return True
 
 def download_reddit_gallery(url):
     new_url = url.replace("/gallery/", "/comments/")
@@ -86,6 +138,9 @@ def download_reddit_gallery(url):
     gallery_index = 1
     basename = ""
     for c in media:
+        if not json_keypair_exists('o', media[c]):
+            print("no image under o tag found")
+            return
         image_url = media[c]['o'][0]['u']
         image_url = image_url.replace("preview.", "i.")
         image_url_clean = clean_url(image_url)
@@ -104,7 +159,11 @@ def download_regular_file(url):
 
 
 def download(url):
-    file_ext = [".png", ".jpg", ".jpeg", ".webm", ".mp4"]
+    file_ext = [".png", ".jpg", ".jpeg", ".webm", ".mp4", ".gif"]
+
+    if "imgflip" in url:
+        print(f"imgflip is broken, skipping {url}")
+        return
 
     if "redgifs.com" in url:
         download_redgifs(url)

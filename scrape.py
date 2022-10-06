@@ -4,7 +4,7 @@ import downloader
 from utils import make_directory, directory_exists, contains_illegal_characters
 
 # change this obviously
-subreddit = "elfhentai"
+subreddit = "sfmcompileclub"
 
 # set to 0 if points/upvote count is not important
 minimum_points = 0
